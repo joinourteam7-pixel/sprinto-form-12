@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sprinto | Professional CRM</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            text-align: right;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .dynamic-field {
+            display: none;
+            margin-top: 10px;
+            border-right: 4px solid var(--accent);
+            padding-right: 10px;
+        }
+
+        .code-preview {
+            background: #eff6ff;
+            border: 2px dashed var(--accent);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #live-code {
+            font-size: 2.2rem;
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        /* شاشة النجاح (قفل الداتا) */
+        #success-page {
+            display: none;
+            text-align: center;
+        }
+
+        .final-badge {
+            font-size: 3rem;
+            color: var(--primary);
+            font-weight: 900;
+            margin: 20px 0;
+            padding: 15px;
+            background: #e0f2fe;
+            border-radius: 15px;
+            border: 3px solid var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="form-section">
+            <h2 style="text-align:center; color:var(--primary)">Sprinto CRM</h2>
+            <form id="crmForm">
+                <div class="form-group">
+                    <label>الاسم بالإنجليزية (لتوليد الكود)</label>
+                    <input type="text" id="name_en" name="name_en" placeholder="e.g. Yousef Madhat" required>
+                </div>
+                <div class="form-group">
+                    <label>الاسم بالعربية</label>
+                    <input type="text" name="name_ar" placeholder="مثال: يوسف مدحت" required>
+                </div>
+                <div class="form-group">
+                    <label>رقم التليفون الأساسي</label>
+                    <input type="tel" id="phone" name="phone" placeholder="01XXXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>تليفون إضافي (اختياري)</label>
+                    <input type="tel" name="alt_phone">
+                </div>
+
+                <div class="form-group">
+                    <label>الفئة الوظيفية</label>
+                    <select name="category" id="catSelect">
+                        <option value="طالب">طالب (Student)</option>
+                        <option value="مدرب">مدرب (Coach)</option>
+                        <option value="شركة">صاحب شركة (CEO)</option>
+                    </select>
+                </div>
+
+                <div id="email_group" class="form-group dynamic-field">
+                    <label>البريد الإلكتروني (إجباري لفئتك)</label>
+                    <input type="email" name="email" placeholder="example@mail.com">
+                </div>
+                <div id="coach_group" class="form-group dynamic-field">
+                    <label>ما هو تخصصك التدريبي؟</label>
+                    <input type="text" name="coach_specialty" placeholder="مثال: فتنس، برمجة...">
+                </div>
+
+                <div class="code-preview">
+                    <span style="font-size:0.8rem; font-weight:bold; color:var(--accent);">كود العميل الذكي</span>
+                    <div id="live-code">--</div>
+                    <input type="hidden" id="customer_code" name="customer_code">
+                </div>
+
+                <button type="submit" id="submitBtn">تأكيد وتسجيل البيانات</button>
+            </form>
+        </div>
+
+        <div id="success-page">
+            <h2 style="color: #059669;">تم الحفظ بنجاح! ✅</h2>
+            <p>تم إرسال بياناتك للشيت، كودك هو:</p>
+            <div class="final-badge" id="final-code"></div>
+            <p style="font-size: 0.8rem; color: #64748b;">برجاء تصوير الشاشة بهذا الكود</p>
+            <button onclick="location.reload()" style="background: #64748b;">إضافة مستخدم جديد</button>
+        </div>
+    </div>
+
+    <script>
+        // ضع رابط الـ Deployment الأخير هنا
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwEgiCC-ejDx-H7DMVmCkYgtxgHh9CRKeKVX4DPv3g6eMv4xaCfEyl8hir-BbcS1ncY/exec';
+
+        // 1. استعادة منطق إخفاء وإظهار الخانات
+        document.getElementById('catSelect').addEventListener('change', function () {
+            const val = this.value;
+            document.getElementById('email_group').style.display = (val !== 'طالب') ? 'block' : 'none';
+            document.getElementById('coach_group').style.display = (val === 'مدرب') ? 'block' : 'none';
+        });
+
+        // 2. استعادة توليد الكود اللحظي
+        function updateCode() {
+            const nameVal = document.getElementById('name_en').value.trim();
+            const phoneVal = document.getElementById('phone').value.slice(-4);
+            let initials = "";
+            if (nameVal) {
+                const parts = nameVal.split(' ');
+                initials = (parts[0] ? parts[0][0] : "") + (parts[1] ? parts[1][0] : "");
+            }
+            const fullCode = (initials || phoneVal) ? initials.toUpperCase() + " - " + phoneVal : "--";
+            document.getElementById('live-code').innerText = fullCode;
+            document.getElementById('customer_code').value = fullCode;
+        }
+        document.getElementById('name_en').oninput = updateCode;
+        document.getElementById('phone').oninput = updateCode;
+
+        // 3. الإرسال وقفل الصفحة عند النجاح
+        document.getElementById('crmForm').onsubmit = function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "جاري الاتصال بالقاعدة...";
+            btn.disabled = true;
+
+            fetch(scriptURL, { method: 'POST', body: new FormData(this) })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.result === 'success') {
+                        document.getElementById('form-section').style.display = 'none'; // قفل الداتا
+                        document.getElementById('success-page').style.display = 'block'; // إظهار الكود
+                        document.getElementById('final-code').innerText = document.getElementById('customer_code').value;
+                    }
+                })
+                .catch(() => {
+                    alert("حدث خطأ في الشبكة، لكن البيانات قد تكون وصلت. افحص الشيت.");
+                    btn.disabled = false;
+                    btn.innerText = "تأكيد وتسجيل البيانات";
+                });
+        };
+    </script>
+</body>
+
+</html>
